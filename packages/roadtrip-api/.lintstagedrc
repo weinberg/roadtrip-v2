@@ -1,0 +1,6 @@
+"lint-staged": {
+  "src/**/*.ts": [
+    "eslint --fix",
+    "git add"
+  ]
+},

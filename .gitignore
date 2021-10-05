@@ -1,0 +1,35 @@
+# dependencies
+/node_modules
+**/node_modules
+
+# build
+**/build
+
+# env
+.env
+**/.env
+**/env.js
+
+# ide
+.idea/
+**/.idea/
+
+# misc
+.DS_Store
+
+**/.webpack
+
+# npm
+npm-debug.log*
+**/npm-debug.log*
+
+# yarn
+yarn-debug.log*
+**/yarn-debug.log*
+yarn-error.log*
+**/yarn-error.log*
+
+# graphql ide integration
+packages/*/.graphqlconfig
+packages/*/schema.graphql
+

@@ -1,0 +1,46 @@
+type Character {
+    name: String!
+    id: String!
+    car: Car!
+}
+
+type Car {
+    name: String
+    riders: [Character]!
+    owner: Character!
+}
+
+type State {
+    name: String!
+}
+
+type City {
+    name: String!
+}
+
+union Feature = City
+
+type Node {
+    x Int!
+    y Int!
+    state State!
+    road Road!
+    feature Feature
+}
+
+type Way {
+    nodes [Node!]!
+    miles: Int!
+}
+
+type Route {
+    ways [Way!]!
+    miles: Int!
+}
+
+type Map {
+    image: String!
+    w: Int!
+    h: Int!
+    nodes: [Node!]!
+}

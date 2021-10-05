@@ -1,0 +1,18 @@
+{
+  "name": "database",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "author": "Joshua Weinberg",
+  "scripts": {
+    "start": "bin/docker-start.sh",
+    "stop": "bin/docker-stop.sh",
+    "migrate:create": "node-pg-migrate create $*",
+    "migrate": "bin/migrate-env.sh $*"
+  },
+  "dependencies": {
+    "node-pg-migrate": "^6.0.0",
+    "pg": "^8.7.1"
+  },
+  "devDependencies": {}
+}

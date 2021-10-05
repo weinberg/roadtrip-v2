@@ -1,0 +1,12 @@
+version: '3.1'
+services:
+  postgres:
+    image: postgres:14.0-alpine
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    container_name: roadtrip-postgres
+    ports:
+      - 5432:5432
+    volumes:
+      - ~/.roadtrip-data:/var/lib/postgresql/data
+
