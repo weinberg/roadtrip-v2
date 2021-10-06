@@ -276,9 +276,9 @@ exports.down = (pgm) => {
   pgm.dropTable("node", { cascade: true, ifExists: true });
   pgm.dropTable("feature", { cascade: true, ifExists: true });
   pgm.dropTable("way", { cascade: true, ifExists: true });
-  pgm.dropTable("nodesOnWay", { cascade: true, ifExists: true });
+  pgm.dropTable("nodesOnWays", { cascade: true, ifExists: true });
   pgm.dropTable("route", { cascade: true, ifExists: true });
-  pgm.dropTable("waysOnRoute", { cascade: true, ifExists: true });
+  pgm.dropTable("waysOnRoutes", { cascade: true, ifExists: true });
   pgm.dropTable("character", { cascade: true, ifExists: true });
   pgm.dropTable("car", { cascade: true, ifExists: true });
 };
