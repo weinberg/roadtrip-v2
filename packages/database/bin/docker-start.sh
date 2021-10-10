@@ -15,7 +15,7 @@ echo -n "Polling for Postgres to become available..."
 
 end="$((SECONDS+180))"
 while true; do
-  nc -z localhost 5432
+  nc -z localhost 5433
   [[ $? = 0 ]] && break
   [[ "${SECONDS}" -ge "${end}" ]] && echo "failed" && exit 1
   sleep 1
@@ -23,7 +23,7 @@ done
 
 sleep 5
 
-echo "Connection to localhost port 5432 [tcp/*] succeeded!"
+echo "Connection to localhost port 5433 [tcp/*] succeeded!"
 echo ""
 
-echo "Postgres is running in docker on port 5432."
+echo "Postgres is running in docker on port 5433."

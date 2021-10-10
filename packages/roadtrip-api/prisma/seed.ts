@@ -7,7 +7,7 @@ async function main() {
     data: {
       w: 80,
       h: 25,
-      glyphs: String.raw`                                                                                    ,__                                                     _,                       \~\|~~~~---___              ,                          | \                       |            ~~~~~~~~~~~~~- ~~---,                 __/   >                     /~                                \`~\_             /~    ,'                     |                                     / /~)    __/      \,                     /                                     | | '~\  |        ,-'                     |                                     | |   /_-'       ~                        |                                     \`-'             /                         |                                                    |\`                         ',                                                   |                           |                                                   \                           ',                                                  /                            '_                                                /                               \                                             /~                                 ~~~-                                        /                                       '-,_                                    \                                           \`~'~~~\                   ,~~~~-~~,  \                                                 \/~\      /~~~\`---\`         |  \                                                    \    /                   \  |                                                    \  |                     '\'                                                     \`~'                                                                                                                               `,
+      image: String.raw`                                                                                    ,__                                                     _,                       \~\|~~~~---___              ,                          | \                       |            ~~~~~~~~~~~~~- ~~---,                 __/   >                     /~                                \`~\_             /~    ,'                     |                                     / /~)    __/      \,                     /                                     | | '~\  |        ,-'                     |                                     | |   /_-'       ~                        |                                     \`-'             /                         |                                                    |\`                         ',                                                   |                           |                                                   \                           ',                                                  /                            '_                                                /                               \                                             /~                                 ~~~-                                        /                                       '-,_                                    \                                           \`~'~~~\                   ,~~~~-~~,  \                                                 \/~\      /~~~\`---\`         |  \                                                    \    /                   \  |                                                    \  |                     '\'                                                     \`~'                                                                                                                               `,
     },
   });
 
@@ -84,56 +84,69 @@ async function main() {
                       x: n[0] as number,
                       y: n[1] as number,
                       miles: n[2] as number,
-                      features: { create: [{ glyph: n[3], data: { type: 'ROAD' } as Prisma.JsonObject }] },
+                      features: {
+                        create: [
+                          { glyph: n[3], data: { type: 'ROAD', name: wayNode.name } as Prisma.JsonObject },
+                          i === 0 && j === 0
+                            ? { glyph: '*', data: { type: 'TOWN', name: 'Seattle' } as Prisma.JsonObject }
+                            : undefined,
+                        ],
+                      },
                     },
                   },
                 })),
               },
             },
           },
-          /*
-          nodes: {
-            create: wayNode.nodes.map((n, j) => ({
-              sequence: j,
-              node: {
-                create: {
-                  x: n[0] as number,
-                  y: n[1] as number,
-                  miles: n[2] as number,
-                  features: { create: [{ glyph: n[3], data: { type: 'ROAD' } as Prisma.JsonObject }] },
+        })),
+      },
+    },
+    include: {
+      ways: {
+        include: {
+          way: {
+            include: {
+              nodes: {
+                include: {
+                  way: true,
                 },
               },
-            })),
+            },
           },
-
-           */
-        })),
+        },
       },
     },
   });
 
-  /*
-  for (const wn of wayNodes) {
-    await prisma.way.create({
-      data: {
-        name: wn.name,
-        nodes: {
-          create: wn.nodes.map((n, i) => ({
-            sequence: i,
-            node: {
-              create: {
-                x: n[0] as number,
-                y: n[1] as number,
-                miles: n[2] as number,
-                features: { create: [{ glyph: n[3], data: { type: 'ROAD' } as Prisma.JsonObject }] },
-              },
-            },
-          })),
+  const car = await prisma.car.create({
+    data: {
+      name: 'Herbie',
+      plate: 'ABC-XYZ',
+      route: {
+        connect: {
+          id: route.id,
         },
       },
-    });
-  }
- */
+      mph: 60,
+      node: {
+        connect: {
+          id: route.ways[0].way.nodes[0].node_id,
+        },
+      },
+    },
+  });
+
+  await prisma.character.create({
+    data: {
+      name: 'Josh',
+      token: '49ba3caa-d0da-4e81-9ee0-47ce29d05e69',
+      car: {
+        connect: {
+          id: car.id,
+        },
+      },
+    },
+  });
 }
 
 main()

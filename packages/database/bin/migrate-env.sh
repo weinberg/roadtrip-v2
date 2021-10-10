@@ -22,6 +22,6 @@ fi
 OPTS=$3
 if [ "$ENV" = "local" ]; then
   echo "Local migrate"
-  DATABASE_URL=postgres://postgres:postgres@localhost:5432 yarn node-pg-migrate $DIR $OPTS
+  DATABASE_URL=postgres://postgres:postgres@localhost:5433/roadtrip yarn node-pg-migrate $DIR $OPTS
   exit
 fi

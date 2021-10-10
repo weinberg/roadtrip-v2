@@ -20,12 +20,13 @@ model car {
   created_at    DateTime   @default(now()) @db.Timestamp(6)
   updated_at    DateTime   @default(now()) @db.Timestamp(6)
   node          node?      @relation(fields: [node_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  character     character? @relation(fields: [owner_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  owner         character? @relation(fields: [owner_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   route         route?     @relation(fields: [route_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model character {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  token      String   @unique
   name       String?
   created_at DateTime @default(now()) @db.Timestamp(6)
   updated_at DateTime @default(now()) @db.Timestamp(6)
@@ -47,8 +48,8 @@ model map {
   name   String?
   w      Int?
   h      Int?
-  glyphs String?
-  route  route[]
+  image  String?
+  routes route[]
 }
 
 model node {
@@ -58,7 +59,7 @@ model node {
   miles      Int?          @default(0)
   created_at DateTime      @default(now()) @db.Timestamp(6)
   updated_at DateTime      @default(now()) @db.Timestamp(6)
-  car        car[]
+  cars       car[]
   features   feature[]
   ways       nodesOnWays[]
 }

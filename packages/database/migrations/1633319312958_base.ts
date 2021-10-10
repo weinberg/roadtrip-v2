@@ -29,7 +29,7 @@ exports.up = (pgm) => {
     h: {
       type: "int",
     },
-    glyphs: {
+    image: {
       type: "string",
     },
   });
@@ -195,6 +195,11 @@ exports.up = (pgm) => {
       primaryKey: true,
       default: pgm.func("gen_random_uuid()"),
       unique: true,
+    },
+    token: {
+      type: "uuid",
+      unique: true,
+      notNull: true,
     },
     name: { type: "string" },
     created_at: {

@@ -1,4 +1,4 @@
-import { gql } from 'apollo-server';
+import { gql } from 'apollo-server-express';
 
 const typeDefs = gql`
   #
@@ -7,6 +7,8 @@ const typeDefs = gql`
 
   type Character {
     id: String!
+    "Character's token"
+    token: String!
     "Character's name"
     name: String!
     "Character's Car"
@@ -34,23 +36,23 @@ const typeDefs = gql`
     name: String!
   }
 
-  type City {
+  type Town {
     id: String!
-    "Name of city"
-    name: String!
+    "Name of town"
+    name: String
     "UTF8 character glyph to represent this node"
-    c: String!
+    glyph: String!
   }
 
   type Road {
     id: String!
     "Name of road"
-    name: String!
+    name: String
     "UTF8 character glyph to represent this node"
-    c: String!
+    glyph: String!
   }
 
-  union Feature = City | Road
+  union Feature = Town | Road
 
   # A node is a single character position on the map
   type Node {
@@ -61,7 +63,7 @@ const typeDefs = gql`
     "State this node is in"
     state: State!
     "Features at this node"
-    feature: [Feature!]!
+    features: [Feature!]!
     "Length in miles of this node"
     miles: Int!
   }
@@ -98,15 +100,17 @@ const typeDefs = gql`
     w: Int!
     "Height of map in characters"
     h: Int!
-    "All the nodes in the map."
-    nodes: [Node!]!
+    "All the routes in the map."
+    routes: [Route!]!
   }
 
   #
   # Query
   #
   type Query {
+    currentCharacter: Character
     character(id: ID!): Character
+    maps: [Map!]!
     map(id: ID): Map
     routes: [Route!]!
     route(id: ID!): Route
