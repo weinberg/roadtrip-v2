@@ -52,13 +52,23 @@ model map {
   routes route[]
 }
 
+model state {
+  id     String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name   String
+  abbreviation String?
+  nodes  node[]
+}
+
 model node {
   id         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   x          Int?          @default(0)
   y          Int?          @default(0)
   miles      Int?          @default(0)
+  tz         Int?          @default(-8)
   created_at DateTime      @default(now()) @db.Timestamp(6)
   updated_at DateTime      @default(now()) @db.Timestamp(6)
+  state_id   String?       @db.Uuid
+  state      state?        @relation(fields: [state_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   cars       car[]
   features   feature[]
   ways       nodesOnWays[]

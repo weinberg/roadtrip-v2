@@ -69,6 +69,7 @@ async function main() {
       },
       Node: {
         features: nodeResolver.features,
+        state: nodeResolver.state,
       },
       Feature: {
         __resolveType(obj) {

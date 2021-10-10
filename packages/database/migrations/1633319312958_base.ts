@@ -35,6 +35,24 @@ exports.up = (pgm) => {
   });
 
   /**
+   * State
+   */
+  pgm.createTable("state", {
+    id: {
+      type: "uuid",
+      primaryKey: true,
+      default: pgm.func("gen_random_uuid()"),
+      unique: true,
+    },
+    name: {
+      type: "string",
+    },
+    abbreviation: {
+      type: "string",
+    },
+  });
+
+  /**
    * Nodes
    */
   pgm.createTable("node", {
@@ -51,6 +69,15 @@ exports.up = (pgm) => {
     y: {
       type: "int",
       default: 0,
+    },
+    state_id: {
+      type: "uuid",
+      references: '"state"',
+      onDelete: "set null",
+    },
+    tz: {
+      type: "int",
+      default: -8,
     },
     miles: {
       type: "int",

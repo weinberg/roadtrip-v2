@@ -34,6 +34,8 @@ const typeDefs = gql`
     id: String!
     "The name of the State"
     name: String!
+    "The abbreviation for the state"
+    abbreviation: String
   }
 
   type Town {
@@ -62,6 +64,8 @@ const typeDefs = gql`
     y: Int!
     "State this node is in"
     state: State!
+    "Timezone offset from UTC"
+    tz: Int!
     "Features at this node"
     features: [Feature!]!
     "Length in miles of this node"

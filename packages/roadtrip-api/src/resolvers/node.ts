@@ -44,4 +44,26 @@ const features = async (parent, args, { db }: Context) => {
   return results?.features || [];
 };
 
-export default { features };
+const state = async (parent, args, { db }: Context) => {
+  if (parent?.state) {
+    return parent.state;
+  }
+
+  let results;
+  try {
+    results = await db.node.findUnique({
+      where: {
+        id: parent.id,
+      },
+      include: {
+        state: true,
+      },
+    });
+  } catch (e) {
+    throwError(e as Error);
+  }
+
+  return results?.state;
+};
+
+export default { features, state };

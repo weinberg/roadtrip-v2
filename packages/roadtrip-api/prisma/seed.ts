@@ -11,61 +11,106 @@ async function main() {
     },
   });
 
+  // washington - I90, I82
+  // oregon - I84
+  // idaho - I84
+  // utah - I84 I80
+  // wyoming I80
+  // colorado I25
+
+  const WA = await prisma.state.create({
+    data: {
+      name: 'Washington',
+      abbreviation: 'WA',
+    },
+  });
+  const OR = await prisma.state.create({
+    data: {
+      name: 'Oregon',
+      abbreviation: 'OR',
+    },
+  });
+  const UT = await prisma.state.create({
+    data: {
+      name: 'Utah',
+      abbreviation: 'UT',
+    },
+  });
+  const ID = await prisma.state.create({
+    data: {
+      name: 'Idaho',
+      abbreviation: 'ID',
+    },
+  });
+  const WY = await prisma.state.create({
+    data: {
+      name: 'Wyoming',
+      abbreviation: 'WY',
+    },
+  });
+  const CO = await prisma.state.create({
+    data: {
+      name: 'Colorado',
+      abbreviation: 'CO',
+    },
+  });
+
   const wayNodes = [
     {
       name: 'I-90',
       nodes: [
-        [7, 3, 10, '═'],
-        [8, 3, 10, '╗'],
+        [7, 3, 10, '═', WA, -8],
+        [8, 3, 10, '╗', WA, -8],
       ],
     },
     {
       name: 'I-82',
       nodes: [
-        [8, 4, 10, '╚'],
-        [9, 4, 10, '╗'],
-        [9, 5, 10, '╚'],
-        [10, 5, 10, '╗'],
-        [10, 6, 10, '╚'],
+        [8, 4, 10, '╚', WA, -8],
+        [9, 4, 10, '╗', WA, -8],
       ],
     },
     {
       name: 'I-84',
       nodes: [
-        [11, 6, 10, '╗'],
-        [11, 7, 10, '╚'],
-        [12, 7, 10, '═'],
-        [13, 7, 10, '╗'],
-        [13, 8, 10, '╚'],
-        [14, 8, 10, '═'],
-        [15, 8, 10, '═'],
-        [16, 8, 10, '╗'],
-        [16, 9, 10, '╚'],
+        [9, 5, 10, '╚', OR, -8],
+        [10, 5, 10, '╗', OR, -8],
+        [10, 6, 10, '╚', OR, -8],
+        [11, 6, 10, '╗', OR, -8],
+        [11, 7, 10, '╚', OR, -8],
+        [12, 7, 10, '═', OR, -7],
+        [13, 7, 10, '╗', ID, -7],
+        [13, 8, 10, '╚', ID, -7],
+        [14, 8, 10, '═', ID, -7],
+        [15, 8, 10, '═', ID, -7],
+        [16, 8, 10, '╗', UT, -7],
+        [16, 9, 10, '╚', UT, -7],
       ],
     },
     {
       name: 'I-80',
       nodes: [
-        [17, 9, 10, '═'],
-        [18, 9, 10, '═'],
-        [19, 9, 10, '═'],
-        [20, 9, 10, '╝'],
-        [20, 8, 10, '╔'],
-        [21, 8, 10, '═'],
-        [22, 8, 10, '═'],
-        [23, 8, 10, '═'],
+        [17, 9, 10, '═', UT, -7],
+        [18, 9, 10, '═', WY, -7],
+        [19, 9, 10, '═', WY, -7],
+        [20, 9, 10, '╝', WY, -7],
+        [20, 8, 10, '╔', WY, -7],
+        [21, 8, 10, '═', WY, -7],
+        [22, 8, 10, '═', WY, -7],
+        [23, 8, 10, '═', WY, -7],
       ],
     },
     {
       name: 'I-25',
       nodes: [
-        [24, 8, 10, '╗'],
-        [24, 9, 10, '║'],
-        [24, 10, 10, '║'],
+        [24, 8, 10, '╗', CO, -7],
+        [24, 9, 10, '║', CO, -7],
+        [24, 10, 10, '║', CO, -7],
       ],
     },
   ];
 
+  // @ts-ignore
   const route = await prisma.route.create({
     data: {
       map_id: map.id,
@@ -84,6 +129,12 @@ async function main() {
                       x: n[0] as number,
                       y: n[1] as number,
                       miles: n[2] as number,
+                      tz: n[5] as number,
+                      state: {
+                        connect: {
+                          id: (n[4] as any).id as string,
+                        },
+                      },
                       features: {
                         create: [
                           { glyph: n[3], data: { type: 'ROAD', name: wayNode.name } as Prisma.JsonObject },
