@@ -12,7 +12,7 @@ type ClientConfig struct {
 }
 
 type CharacterInfo struct {
-  Id string
+  Token string
 }
 
 // LoadConfig loads the client config from an OS specific location.
@@ -63,13 +63,13 @@ func SaveConfig(conf ClientConfig) error {
   return nil
 }
 
-func NewCharacterInfo(id string) (ClientConfig, CharacterInfo, error) {
+func NewCharacterInfo(token string) (ClientConfig, CharacterInfo, error) {
   config, err := LoadConfig()
   if err != nil {
     return ClientConfig{}, CharacterInfo{}, err
   }
   nc := CharacterInfo{
-    Id: id,
+    Token: token,
   }
   config.Characters = append(config.Characters, nc)
 
@@ -81,14 +81,14 @@ func NewCharacterInfo(id string) (ClientConfig, CharacterInfo, error) {
   return config, nc, nil
 }
 
-func DeleteCharacterInfo(id string) (ClientConfig, error) {
+func DeleteCharacterInfo(token string) (ClientConfig, error) {
   config, err := LoadConfig()
   if err != nil {
     return ClientConfig{}, err
   }
   newchars := []CharacterInfo{}
   for _, c := range config.Characters {
-    if c.Id != id {
+    if c.Token != token {
       newchars = append(newchars, c)
     }
   }

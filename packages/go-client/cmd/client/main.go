@@ -2,27 +2,54 @@ package main
 
 import (
   "bufio"
+  "context"
   "flag"
   "fmt"
   "github.com/brickshot/roadtrip-v2/go-client/internal/client/config"
   "github.com/brickshot/roadtrip-v2/go-client/internal/client/ui"
+  "github.com/hasura/go-graphql-client"
   "log"
+  "net/http"
   "os"
+  "strconv"
 )
 
-var id string
+var token string
 var reader *bufio.Reader
 var screen ui.Screen
 var tlsDisabled bool
 var host string
 var port int
+var client *graphql.Client
 
 func init() {
   flag.BoolVar(&tlsDisabled, "tls", false, "If false, use TLS. Defaults to false.")
   flag.StringVar(&host, "host", "0.0.0.0", "PlayerServer hostname. Defaults to localhost.")
-  flag.IntVar(&port, "port", 9066, "PlayerServer port. Defaults to 9066.")
+  flag.IntVar(&port, "port", 8080, "PlayerServer port. Defaults to 8080.")
 }
 
+/**
+ * Code to add Authorization header with token to http client transport
+ */
+type AddHeaderTransport struct {
+  T http.RoundTripper
+}
+
+func (adt *AddHeaderTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+  req.Header.Add("Authorization", token)
+  return adt.T.RoundTrip(req)
+}
+
+func NewAddHeaderTransport(T http.RoundTripper) *AddHeaderTransport {
+  if T == nil {
+    T = http.DefaultTransport
+  }
+  return &AddHeaderTransport{T}
+}
+
+/**
+ * setup
+ */
 func setup() {
   /*
      Config file has list of characterInfo which have id
@@ -45,12 +72,13 @@ func setup() {
   }
 
   // currently, only use first character
-  id = conf.Characters[0].Id
+  token = conf.Characters[0].Token
 
-  fmt.Printf("Character from config file has token: %v\n", id)
+  fmt.Printf("Character from config file has token: %v\n", token)
 
   // get character from server
-
+  httpClient := http.Client{Transport: NewAddHeaderTransport(nil)}
+  client = graphql.NewClient("http://"+host+":" + strconv.Itoa(port), &httpClient)
 }
 
 /*
@@ -98,9 +126,26 @@ func roadTripTitle() {
   fmt.Println(text)
 }
 
+func graphqlTest() {
+  var query struct {
+    CurrentCharacter struct {
+      Name graphql.String
+    }
+  }
+  err := client.Query(context.Background(), &query, nil)
+  if err != nil {
+    fmt.Printf("%v", err)
+    // Handle error.
+  }
+  fmt.Println(query.CurrentCharacter.Name)
+
+}
+
 // main
 func main() {
   setup()
+
+  graphqlTest()
 
   screen = ui.Screen{Width: 80, Height: 25}
 }
