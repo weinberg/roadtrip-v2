@@ -63,6 +63,7 @@ async function main() {
       Route: {
         miles: routeResolver.miles,
         ways: routeResolver.ways,
+        map: routeResolver.map,
       },
       Way: {
         nodes: wayResolver.nodes,

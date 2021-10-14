@@ -5,6 +5,7 @@ import (
   "context"
   "flag"
   "fmt"
+  types "github.com/brickshot/roadtrip-v2/go-client/internal/client"
   "github.com/brickshot/roadtrip-v2/go-client/internal/client/config"
   "github.com/brickshot/roadtrip-v2/go-client/internal/client/ui"
   "github.com/hasura/go-graphql-client"
@@ -47,6 +48,26 @@ func NewAddHeaderTransport(T http.RoundTripper) *AddHeaderTransport {
   return &AddHeaderTransport{T}
 }
 
+type Data struct {
+  CurrentCharacter types.CurrentCharacter
+}
+
+/**
+ * Load initial graphql payload
+ */
+func getCurrentCharacter() {
+
+  var query Data
+  err := client.Query(context.Background(), &query, nil)
+  if err != nil {
+    fmt.Printf("%v\n", err)
+    // Handle error.
+    return
+  }
+  //fmt.Printf("%v\n", query.CurrentCharacter)
+  ui.Render(ui.RenderData{CurrentCharacter: query.CurrentCharacter})
+}
+
 /**
  * setup
  */
@@ -78,7 +99,9 @@ func setup() {
 
   // get character from server
   httpClient := http.Client{Transport: NewAddHeaderTransport(nil)}
-  client = graphql.NewClient("http://"+host+":" + strconv.Itoa(port), &httpClient)
+  client = graphql.NewClient("http://"+host+":"+strconv.Itoa(port), &httpClient)
+
+  getCurrentCharacter()
 }
 
 /*
@@ -126,26 +149,9 @@ func roadTripTitle() {
   fmt.Println(text)
 }
 
-func graphqlTest() {
-  var query struct {
-    CurrentCharacter struct {
-      Name graphql.String
-    }
-  }
-  err := client.Query(context.Background(), &query, nil)
-  if err != nil {
-    fmt.Printf("%v", err)
-    // Handle error.
-  }
-  fmt.Println(query.CurrentCharacter.Name)
-
-}
-
 // main
 func main() {
   setup()
-
-  graphqlTest()
 
   screen = ui.Screen{Width: 80, Height: 25}
 }

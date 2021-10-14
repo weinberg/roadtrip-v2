@@ -91,6 +91,8 @@ const typeDefs = gql`
     ways: [Way!]!
     "Length of this route. This is equivalent to the sum of the miles of all the ways in the route."
     miles: Int!
+    "The map this route is on."
+    map: Map!
   }
 
   type Map {

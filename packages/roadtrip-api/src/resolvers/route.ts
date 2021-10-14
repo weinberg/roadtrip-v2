@@ -50,4 +50,22 @@ const ways = async (parent: Route, args, { db }: Context) => {
   return results?.ways.sort((a, b) => a.sequence - b.sequence).map((w) => w.way);
 };
 
-export default { miles, ways };
+const map = async (parent, args, { db }: Context) => {
+  let result;
+  try {
+    result = await db.route.findUnique({
+      where: {
+        id: parent.id,
+      },
+      include: {
+        map: true,
+      },
+    });
+  } catch (e) {
+    throwError(e as Error);
+  }
+
+  return result?.map;
+};
+
+export default { miles, ways, map };
