@@ -1,13 +1,20 @@
 import { Prisma, PrismaClient } from '@prisma/client';
+import fs from 'fs';
 
 const prisma = new PrismaClient();
 
 async function main() {
+  // read map image from file
+  let maptext = fs.readFileSync(`${__dirname}/map.txt`, 'utf8');
+  let rows = maptext.split(/\n/);
+  let image;
+  image = rows.map((r) => r.padEnd(80, ' ')).join('');
+
   const map = await prisma.map.create({
     data: {
       w: 80,
       h: 25,
-      image: String.raw`                                                                                    ,__                                                     _,                       \~\|~~~~---___              ,                          | \                       |            ~~~~~~~~~~~~~- ~~---,                 __/   >                     /~                                \`~\_             /~    ,'                     |                                     / /~)    __/      \,                     /                                     | | '~\  |        ,-'                     |                                     | |   /_-'       ~                        |                                     \`-'             /                         |                                                    |\`                         ',                                                   |                           |                                                   \                           ',                                                  /                            '_                                                /                               \                                             /~                                 ~~~-                                        /                                       '-,_                                    \                                           \`~'~~~\                   ,~~~~-~~,  \                                                 \/~\      /~~~\`---\`         |  \                                                    \    /                   \  |                                                    \  |                     '\'                                                     \`~'                                                                                                                               `,
+      image,
     },
   });
 
