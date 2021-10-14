@@ -43,8 +43,8 @@ type RenderData struct {
 
 func Render(data RenderData) {
   m := data.CurrentCharacter.Car.Route.Map
-  for r := 0; r < m.H-1; r++ {
-    for c := 0; c < m.W-1; c++ {
+  for r := 0; r < m.H; r++ {
+    for c := 0; c < m.W; c++ {
       fmt.Printf("%c", m.Image[r*m.W+c])
     }
     fmt.Printf("\n")
