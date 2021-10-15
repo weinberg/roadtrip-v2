@@ -42,12 +42,39 @@ type RenderData struct {
 }
 
 func Render(data RenderData) {
+  cls()
+  moveTo(0,0)
   m := data.CurrentCharacter.Car.Route.Map
-  for r := 0; r < m.H; r++ {
-    for c := 0; c < m.W; c++ {
-      fmt.Printf("%c", m.Image[r*m.W+c])
+  Outer:
+    for r := 0; r < m.H; r++ {
+      for c := 0; c < m.W; c++ {
+        i :=r*m.W+c;
+        if i >= len(m.Image) {
+          break Outer
+        }
+        fmt.Printf("%c", m.Image[i])
+      }
+      fmt.Printf("\n")
     }
-    fmt.Printf("\n")
+
+  r := data.CurrentCharacter.Car.Route
+  moveTo(0,0)
+  fmt.Printf("Route: %s", r.Name)
+
+  for _, w := range r.Ways {
+    for _, n := range w.Nodes {
+      for _, f := range n.Features {
+        if f.Road.Glyph != "" {
+          moveTo(n.X, n.Y)
+          fmt.Printf("%v", f.Road.Glyph)
+        }
+      }
+    }
   }
+  moveTo(7,0)
+  fmt.Printf("x")
+  moveTo(0,3)
+  fmt.Printf("y")
+  moveTo(0,25)
 }
 

@@ -23,6 +23,8 @@ var host string
 var port int
 var client *graphql.Client
 
+var currentCharacter types.CurrentCharacter
+
 func init() {
   flag.BoolVar(&tlsDisabled, "tls", false, "If false, use TLS. Defaults to false.")
   flag.StringVar(&host, "host", "0.0.0.0", "PlayerServer hostname. Defaults to localhost.")
@@ -48,24 +50,23 @@ func NewAddHeaderTransport(T http.RoundTripper) *AddHeaderTransport {
   return &AddHeaderTransport{T}
 }
 
-type Data struct {
-  CurrentCharacter types.CurrentCharacter
-}
-
 /**
  * Load initial graphql payload
  */
 func getCurrentCharacter() {
 
-  var query Data
+  var query struct {
+    CurrentCharacter types.CurrentCharacter
+  }
+
   err := client.Query(context.Background(), &query, nil)
   if err != nil {
     fmt.Printf("%v\n", err)
     // Handle error.
     return
   }
-  //fmt.Printf("%v\n", query.CurrentCharacter)
-  ui.Render(ui.RenderData{CurrentCharacter: query.CurrentCharacter})
+
+  currentCharacter = query.CurrentCharacter
 }
 
 /**
@@ -154,4 +155,5 @@ func main() {
   setup()
 
   screen = ui.Screen{Width: 80, Height: 25}
+  ui.Render(ui.RenderData{CurrentCharacter: currentCharacter})
 }

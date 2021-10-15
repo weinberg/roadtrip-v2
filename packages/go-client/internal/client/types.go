@@ -18,9 +18,9 @@ type (
   }
 
   Node struct {
-    X        graphql.Int
-    Y        graphql.Int
-    Tz       graphql.Int
+    X        int
+    Y        int
+    Tz       int
     State    State
     Features []struct {
       Road `graphql:"... on Road"`
