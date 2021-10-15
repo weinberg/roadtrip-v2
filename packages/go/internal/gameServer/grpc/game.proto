@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package roadtrip;
+
+option go_package = "insofar.com/roadTrip/game_server_grpc";
+
+// Interface exported by the server.
+
+/*************************************
+ * Entities
+ ************************************/
+
+message Car {
+  string id = 1;
+  Location location = 2;
+  int32 mph = 3;
+}
+
+message Location {
+  string route_id = 1;
+  int32 way_no = 2;
+  int32 node_no = 3;
+  int32 miles = 4;
+}
+
+/*************************************
+ * Service
+ ************************************/
+
+// RoadTrip Game service provides access to dynamic game data.
+
+service RoadTripGame {
+  rpc CreateCar(CreateCarRequest) returns (Empty) {}
+  rpc UpdateCar(UpdateCarRequest) returns (Empty) {}
+  rpc GetCarLocation(GetCarLocationRequest) returns (Location) {}
+}
+
+/*************************************
+ * Requests
+ ************************************/
+
+message Empty {}
+
+message CreateCarRequest {
+  Car car = 1;
+}
+
+message UpdateCarRequest {
+  Car car = 1;
+}
+
+message GetCarLocationRequest {
+  string car_id = 1;
+}
+
