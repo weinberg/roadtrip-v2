@@ -2,7 +2,7 @@ package ui
 
 import (
   "fmt"
-  "github.com/brickshot/roadtrip-v2/go/internal/client"
+  . "github.com/brickshot/roadtrip-v2/internal/client"
 )
 
 var esc = "\033"
@@ -38,7 +38,7 @@ func color(fg int, bg int) {
 }
 
 type RenderData struct {
-  CurrentCharacter types.CurrentCharacter
+  CurrentCharacter CurrentCharacter
 }
 
 func Render(data RenderData) {

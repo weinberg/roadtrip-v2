@@ -5,12 +5,14 @@ import (
   "context"
   "flag"
   "fmt"
+  types "github.com/brickshot/roadtrip-v2/internal/client"
+  "github.com/brickshot/roadtrip-v2/internal/client/config"
+  "github.com/brickshot/roadtrip-v2/internal/client/ui"
+  "github.com/hasura/go-graphql-client"
   "log"
   "net/http"
   "os"
   "strconv"
-  "github.com/brickshot/roadtrip-v2"
-
 )
 
 var token string
@@ -102,39 +104,6 @@ func setup() {
 
   getCurrentCharacter()
 }
-
-/*
-func createNewCharacter() *psgrpc.Character {
-  fmt.Println("Creating a new character...")
-  var name string
-  for name == "" {
-    fmt.Printf("What would you like your name to be?  ")
-    name, _ = reader.ReadString('\n')
-    name = strings.TrimRight(name, "\r\n")
-    if name == "" {
-      fmt.Println("That name is too short.")
-    }
-  }
-
-  // create in server
-  char, err := client.CreateCharacter(getCtx(), &psgrpc.CreateCharacterRequest{
-    CaptchaId:     "",
-    CharacterName: name,
-  })
-  st := status.Convert(err)
-  if st != nil {
-    log.Fatalf("Failed to create character: %v.\n", err)
-  }
-
-  // store in config
-  _, _, err = config.NewCharacterInfo(char.Id)
-  if err != nil {
-    log.Fatalln("Cannot create new character: ", err)
-  }
-
-  return char
-}
-*/
 
 func roadTripTitle() {
   text := `

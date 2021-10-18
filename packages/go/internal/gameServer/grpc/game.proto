@@ -18,9 +18,8 @@ message Car {
 
 message Location {
   string route_id = 1;
-  int32 way_no = 2;
-  int32 node_no = 3;
-  int32 miles = 4;
+  int32 index = 2;
+  int32 miles = 3;
 }
 
 /*************************************
@@ -30,8 +29,7 @@ message Location {
 // RoadTrip Game service provides access to dynamic game data.
 
 service RoadTripGame {
-  rpc CreateCar(CreateCarRequest) returns (Empty) {}
-  rpc UpdateCar(UpdateCarRequest) returns (Empty) {}
+  rpc Upsert(UpsertCarRequest) returns (Empty) {}
   rpc GetCarLocation(GetCarLocationRequest) returns (Location) {}
 }
 
@@ -41,11 +39,7 @@ service RoadTripGame {
 
 message Empty {}
 
-message CreateCarRequest {
-  Car car = 1;
-}
-
-message UpdateCarRequest {
+message UpsertCarRequest {
   Car car = 1;
 }
 
