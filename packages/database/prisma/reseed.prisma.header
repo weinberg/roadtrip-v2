@@ -1,0 +1,10 @@
+// Header for prisma typescript schema for use in reseed
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}

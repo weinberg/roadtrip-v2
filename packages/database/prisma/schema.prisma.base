@@ -1,11 +1,5 @@
-generator client {
-  provider = "prisma-client-js"
-}
-
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+// This is the BASE schema it must be combined with the correct preface to build for
+// typescript or go client.
 
 model car {
   id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid

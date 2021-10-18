@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	. "github.com/brickshot/roadtrip-v2/internal/gameServer/grpc"
+	db "github.com/brickshot/roadtrip-v2/internal/prisma"
+	_ "github.com/joho/godotenv/autoload"
 	"google.golang.org/grpc"
 	"log"
 	"net"
@@ -21,7 +24,6 @@ var dbURL = fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?schema=public",
 	dbHost, dbPort, dbUser, dbPass, dbName)
 
 const port = "9066"
-
 const updateInterval = time.Second
 
 type gameServer struct {
@@ -66,7 +68,29 @@ func init() {
 }
 
 func main() {
-	fmt.Printf("GameServer started...\n")
+	fmt.Printf("GameServer starting...\n")
+
+	// Setup prisma
+
+	client := db.NewClient()
+	if err := client.Prisma.Connect(); err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		if err := client.Prisma.Disconnect(); err != nil {
+			panic(err)
+		}
+	}()
+
+	ctx := context.Background()
+	routes,_ := client.Route.FindMany().Exec(ctx)
+
+	result, _ := json.MarshalIndent(routes, "", "  ")
+	fmt.Printf("routes: %s\n", result)
+
+	// Start server
+
 	c := make(chan int)
 	go mainLoop(c)
 	go StartServer(c)
@@ -153,8 +177,7 @@ func mainLoop(ch chan int) {
 func update() {
 	now := time.Now()
 	diff := now.Sub(lastTick)
-	for _,c := range data.cars {
+	for _, c := range data.cars {
 		c.location.miles += int32(float64(c.mph) * (diff.Seconds() / 3600.0))
 	}
 }
-

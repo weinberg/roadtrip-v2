@@ -8,11 +8,20 @@
     "start": "bin/docker-start.sh",
     "stop": "bin/docker-stop.sh",
     "migrate:create": "node-pg-migrate create $*",
-    "migrate": "bin/migrate-env.sh $*"
+    "migrate": "bin/migrate-env.sh $*",
+    "reseed": "./bin/reseed.sh"
   },
   "dependencies": {
+    "@prisma/client": "3.2.1",
     "node-pg-migrate": "^6.0.0",
     "pg": "^8.7.1"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "prisma": "3.2.1",
+    "ts-node": "^10.3.0",
+    "typescript": "^4.4.4"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  }
 }

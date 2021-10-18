@@ -1,0 +1,11 @@
+// Header for prisma typescript schema to be combined with base schema in database project
+// use yarn prisma:generate to generate prisma client
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
