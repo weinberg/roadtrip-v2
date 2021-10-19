@@ -40,24 +40,24 @@ type gameServer struct {
 
 type location struct {
 	routeId string
-	index   int32 // index of node in route if they were all laid out sequentially
-	miles   int32
+	index   int // index of node in route if they were all laid out sequentially
+	miles   float32
 }
 
 type car struct {
 	id       string
 	location location
-	mph      int32
+	mph      float32
 }
 
 type gameData struct {
 	cars map[string]car
 }
 
-var data = gameData{}
+var data = gameData{cars: make(map[string]car)}
 var lastTick time.Time
 var client *db.PrismaClient
-var routes []Route
+var routeMap map[string]Route = make(map[string]Route)
 
 /******************************
  *
@@ -67,6 +67,17 @@ var routes []Route
 
 func init() {
 	lastTick = time.Now()
+
+	// debug
+	data.cars["1"] = car{
+		id: "1",
+		location: location{
+			routeId: "a15a38f8-ede0-4388-9206-c18a0dd4bd5c",
+			index:   0,
+			miles:   0,
+		},
+		mph: 60000,
+	}
 }
 
 func main() {
@@ -91,6 +102,7 @@ func main() {
 	// Start server
 
 	c := make(chan int)
+
 	go mainLoop(c)
 	go StartServer(c)
 	<-c
@@ -134,12 +146,21 @@ func loadRoutes() <-chan int32 {
 			db.Route.Ways.Fetch().With(
 				db.WaysOnRoutes.Way.Fetch().With(
 					db.Way.Nodes.Fetch().With(
-					  db.NodesOnWays.Node.Fetch(),
-          ),
+						db.NodesOnWays.Node.Fetch(),
+					).OrderBy(
+						db.NodesOnWays.Sequence.Order(db.SortOrderAsc),
+					),
 				),
+			).OrderBy(
+				db.WaysOnRoutes.Sequence.Order(db.SortOrderAsc),
 			),
 		).Exec(ctx)
-		routes = unmarshall(rs)
+		routes := unmarshall(rs)
+
+		for _, route := range routes {
+			routeMap[route.Id] = route
+		}
+
 		c <- 1
 	}()
 	return c
@@ -167,6 +188,7 @@ func StartServer(ch chan int) {
 	RegisterRoadTripGameServer(s, &gameServer{})
 
 	s.Serve(lis)
+
 	ch <- 0
 }
 
@@ -176,10 +198,10 @@ func (*gameServer) UpsertCar(ctx context.Context, request *UpsertCarRequest) (*E
 		id: request.Car.Id,
 		location: location{
 			routeId: request.Car.Location.RouteId,
-			index:   request.Car.Location.Index,
-			miles:   request.Car.Location.Miles,
+			index:   int(request.Car.Location.Index),
+			miles:   float32(request.Car.Location.Miles),
 		},
-		mph: request.Car.Mph,
+		mph: float32(request.Car.Mph),
 	}
 
 	return &Empty{}, nil
@@ -195,8 +217,8 @@ func (*gameServer) GetCarLocation(ctx context.Context, request *GetCarLocationRe
 
 	l := Location{
 		RouteId: c.location.routeId,
-		Index:   c.location.index,
-		Miles:   c.location.miles,
+		Index:   int32(c.location.index),
+		Miles:   int32(c.location.miles),
 	}
 
 	return &l, nil
@@ -226,6 +248,28 @@ func update() {
 	now := time.Now()
 	diff := now.Sub(lastTick)
 	for _, c := range data.cars {
-		c.location.miles += int32(float64(c.mph) * (diff.Seconds() / 3600.0))
+		if c.mph == 0 {
+			continue
+		}
+
+		route := routeMap[c.location.routeId]
+		node := route.Nodes[c.location.index]
+		c.location.miles += float32(float64(c.mph) * (diff.Seconds() / 3600.0))
+		excessMiles := c.location.miles - float32(node.Miles)
+		for excessMiles > 0 {
+			// move to next node
+			c.location.index++
+			node = route.Nodes[c.location.index]
+      c.location.miles = excessMiles
+			if c.location.index == len(route.Nodes)-1 {
+				// end of the line
+				c.mph = 0
+				break
+			}
+			excessMiles = c.location.miles - float32(node.Miles)
+		}
+
+		// debug
+		fmt.Printf("%+v\n", c)
 	}
 }
