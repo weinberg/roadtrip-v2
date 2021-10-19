@@ -282,8 +282,8 @@ exports.up = (pgm) => {
       type: "uuid",
       references: '"node"',
     },
-    // car position inside the current node
-    node_position: {
+    // car position inside the current node (referenced by route index)
+    node_miles: {
       type: "int",
       default: 0,
     },

@@ -197,12 +197,9 @@ async function main() {
           id: route.id,
         },
       },
+      route_index: 0,
+      node_miles: 0,
       mph: 60,
-      node: {
-        connect: {
-          id: route?.ways?.[0]?.way?.nodes?.[0]?.node_id || undefined,
-        },
-      },
     },
   });
 

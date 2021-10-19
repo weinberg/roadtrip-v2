@@ -1,4 +1,4 @@
-package types
+package client
 
 import "github.com/hasura/go-graphql-client"
 

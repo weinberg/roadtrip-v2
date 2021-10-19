@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	. "github.com/brickshot/roadtrip-v2/internal/gameServer"
 	. "github.com/brickshot/roadtrip-v2/internal/gameServer/grpc"
 	db "github.com/brickshot/roadtrip-v2/internal/prisma"
 	_ "github.com/joho/godotenv/autoload"
@@ -56,6 +56,8 @@ type gameData struct {
 
 var data = gameData{}
 var lastTick time.Time
+var client *db.PrismaClient
+var routes []Route
 
 /******************************
  *
@@ -70,24 +72,21 @@ func init() {
 func main() {
 	fmt.Printf("GameServer starting...\n")
 
-	// Setup prisma
+	// Prisma
 
-	client := db.NewClient()
-	if err := client.Prisma.Connect(); err != nil {
-		panic(err)
-	}
-
+	setupPrisma()
 	defer func() {
 		if err := client.Prisma.Disconnect(); err != nil {
 			panic(err)
 		}
 	}()
 
-	ctx := context.Background()
-	routes,_ := client.Route.FindMany().Exec(ctx)
+	fmt.Printf("calling load routes")
 
-	result, _ := json.MarshalIndent(routes, "", "  ")
-	fmt.Printf("routes: %s\n", result)
+	// Load routes
+	<-loadRoutes()
+
+	fmt.Printf("loaded routes")
 
 	// Start server
 
@@ -95,6 +94,55 @@ func main() {
 	go mainLoop(c)
 	go StartServer(c)
 	<-c
+}
+
+func setupPrisma() {
+	// Setup prisma
+	client = db.NewClient()
+	if err := client.Prisma.Connect(); err != nil {
+		panic(err)
+	}
+}
+
+func unmarshall(rs []db.RouteModel) []Route {
+	res := []Route{}
+	for _, r := range rs {
+		route := Route{
+			Id:    r.ID,
+			Nodes: []Node{},
+		}
+		for _, w := range r.Ways() {
+			for _, n := range w.RelationsWaysOnRoutes.Way.Nodes() {
+				route.Nodes = append(route.Nodes, Node{
+					Miles: n.RelationsNodesOnWays.Node.Miles,
+					Id:    n.RelationsNodesOnWays.Node.ID,
+				})
+			}
+		}
+		res = append(res, route)
+	}
+
+	return res
+}
+
+func loadRoutes() <-chan int32 {
+	c := make(chan int32)
+	go func() {
+		defer close(c)
+		ctx := context.Background()
+		rs, _ := client.Route.FindMany().With(
+			db.Route.Ways.Fetch().With(
+				db.WaysOnRoutes.Way.Fetch().With(
+					db.Way.Nodes.Fetch().With(
+					  db.NodesOnWays.Node.Fetch(),
+          ),
+				),
+			),
+		).Exec(ctx)
+		routes = unmarshall(rs)
+		c <- 1
+	}()
+	return c
 }
 
 /******************************
