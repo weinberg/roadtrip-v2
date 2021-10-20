@@ -80,7 +80,7 @@ exports.up = (pgm) => {
       default: -8,
     },
     miles: {
-      type: "int",
+      type: "double precision",
       default: 0,
     },
     created_at: {
@@ -264,7 +264,7 @@ exports.up = (pgm) => {
       onDelete: "cascade",
     },
     mph: {
-      type: "int",
+      type: "double precision",
       default: 0,
     },
     // route this car is currently on
@@ -277,14 +277,9 @@ exports.up = (pgm) => {
       type: "int",
       default: 0,
     },
-    // current node
-    node_id: {
-      type: "uuid",
-      references: '"node"',
-    },
     // car position inside the current node (referenced by route index)
     node_miles: {
-      type: "int",
+      type: "double precision",
       default: 0,
     },
     created_at: {

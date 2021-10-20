@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	. "github.com/brickshot/roadtrip-v2/internal/gameServer"
-	. "github.com/brickshot/roadtrip-v2/internal/gameServer/grpc"
+	g "github.com/brickshot/roadtrip-v2/internal/gameServer/grpc"
 	db "github.com/brickshot/roadtrip-v2/internal/prisma"
 	_ "github.com/joho/godotenv/autoload"
 	"google.golang.org/grpc"
@@ -27,7 +27,7 @@ const port = "9066"
 const updateInterval = time.Second
 
 type gameServer struct {
-	UnimplementedRoadTripGameServer
+	g.UnimplementedRoadTripGameServer
 }
 
 /******************************
@@ -38,6 +38,7 @@ type gameServer struct {
 
 // move this into a provider
 
+/*
 type location struct {
 	routeId string
 	index   int // index of node in route if they were all laid out sequentially
@@ -49,12 +50,13 @@ type car struct {
 	location location
 	mph      float32
 }
+*/
 
 type gameData struct {
-	cars map[string]car
+	cars map[string]Car
 }
 
-var data = gameData{cars: make(map[string]car)}
+var data = gameData{cars: make(map[string]Car)}
 var lastTick time.Time
 var client *db.PrismaClient
 var routeMap map[string]Route = make(map[string]Route)
@@ -67,17 +69,6 @@ var routeMap map[string]Route = make(map[string]Route)
 
 func init() {
 	lastTick = time.Now()
-
-	// debug
-	data.cars["1"] = car{
-		id: "1",
-		location: location{
-			routeId: "a15a38f8-ede0-4388-9206-c18a0dd4bd5c",
-			index:   0,
-			miles:   0,
-		},
-		mph: 60000,
-	}
 }
 
 func main() {
@@ -92,12 +83,8 @@ func main() {
 		}
 	}()
 
-	fmt.Printf("calling load routes")
-
-	// Load routes
 	<-loadRoutes()
-
-	fmt.Printf("loaded routes")
+	<-loadCars()
 
 	// Start server
 
@@ -116,7 +103,37 @@ func setupPrisma() {
 	}
 }
 
-func unmarshall(rs []db.RouteModel) []Route {
+func loadRoutes() <-chan int32 {
+	fmt.Printf("Loading routes...\n")
+	c := make(chan int32)
+	go func() {
+		defer close(c)
+		ctx := context.Background()
+		rs, _ := client.Route.FindMany().With(
+			db.Route.Ways.Fetch().With(
+				db.WaysOnRoutes.Way.Fetch().With(
+					db.Way.Nodes.Fetch().With(
+						db.NodesOnWays.Node.Fetch(),
+					).OrderBy(
+						db.NodesOnWays.Sequence.Order(db.SortOrderAsc),
+					),
+				),
+			).OrderBy(
+				db.WaysOnRoutes.Sequence.Order(db.SortOrderAsc),
+			),
+		).Exec(ctx)
+		routes := unmarshallRoutes(rs)
+
+		for _, route := range routes {
+			routeMap[route.Id] = route
+		}
+
+		c <- 1
+	}()
+	return c
+}
+
+func unmarshallRoutes(rs []db.RouteModel) []Route {
 	res := []Route{}
 	for _, r := range rs {
 		route := Route{
@@ -137,28 +154,17 @@ func unmarshall(rs []db.RouteModel) []Route {
 	return res
 }
 
-func loadRoutes() <-chan int32 {
+func loadCars() <-chan int32 {
+	fmt.Printf("Loading cars...\n")
 	c := make(chan int32)
 	go func() {
 		defer close(c)
 		ctx := context.Background()
-		rs, _ := client.Route.FindMany().With(
-			db.Route.Ways.Fetch().With(
-				db.WaysOnRoutes.Way.Fetch().With(
-					db.Way.Nodes.Fetch().With(
-						db.NodesOnWays.Node.Fetch(),
-					).OrderBy(
-						db.NodesOnWays.Sequence.Order(db.SortOrderAsc),
-					),
-				),
-			).OrderBy(
-				db.WaysOnRoutes.Sequence.Order(db.SortOrderAsc),
-			),
-		).Exec(ctx)
-		routes := unmarshall(rs)
+		cs, _ := client.Car.FindMany().Exec(ctx)
+		cars := unmarshallCars(cs)
 
-		for _, route := range routes {
-			routeMap[route.Id] = route
+		for _, car := range cars {
+			data.cars[car.Id] = car
 		}
 
 		c <- 1
@@ -166,9 +172,41 @@ func loadRoutes() <-chan int32 {
 	return c
 }
 
+func unmarshallCars(cs []db.CarModel) []Car {
+	res := []Car{}
+	for _, c := range cs {
+		routeIndex, ok := c.RouteIndex()
+		if !ok {
+			continue
+		}
+		nodeMiles, ok := c.NodeMiles()
+		if !ok {
+			continue
+		}
+		routeId, ok := c.RouteID()
+		if !ok {
+		  continue
+    }
+    mph, ok := c.Mph()
+    if !ok {
+      continue
+    }
+		car := Car{
+			Id:         c.ID,
+			RouteId: routeId,
+			RouteIndex: int32(routeIndex),
+			NodeMiles:  nodeMiles,
+			Mph: mph,
+		}
+		res = append(res, car)
+	}
+
+	return res
+}
+
 /******************************
  *
- * Game Service API methods
+ * Game Service GRPC API
  *
  ******************************/
 
@@ -180,45 +218,43 @@ func StartServer(ch chan int) {
 	}
 	fmt.Printf("Server is listening on %v...\n", address)
 
-	fmt.Printf("Connecting to data provider... unimplemented\n")
-
 	var s *grpc.Server
 	s = grpc.NewServer()
 
-	RegisterRoadTripGameServer(s, &gameServer{})
+	g.RegisterRoadTripGameServer(s, &gameServer{})
 
-	s.Serve(lis)
+	servErr := s.Serve(lis)
+	if err != nil {
+		panic(servErr)
+	}
 
 	ch <- 0
 }
 
 // UpsertCar creates or updates a car. Car should already have been created in the db.
-func (*gameServer) UpsertCar(ctx context.Context, request *UpsertCarRequest) (*Empty, error) {
-	data.cars[request.Car.Id] = car{
-		id: request.Car.Id,
-		location: location{
-			routeId: request.Car.Location.RouteId,
-			index:   int(request.Car.Location.Index),
-			miles:   float32(request.Car.Location.Miles),
-		},
-		mph: float32(request.Car.Mph),
+func (*gameServer) UpsertCar(ctx context.Context, request *g.UpsertCarRequest) (*g.Empty, error) {
+	data.cars[request.Car.Id] = Car{
+		Id:         request.Car.Id,
+		RouteId:    request.Car.Location.RouteId,
+		RouteIndex: request.Car.Location.Index,
+		NodeMiles:  float64(request.Car.Location.Miles),
+		Mph:        float64(request.Car.Mph),
 	}
 
-	return &Empty{}, nil
+	return &g.Empty{}, nil
 }
 
-//rpc GetCarLocation(GetCarLocationRequest) returns (Location) {
 // GetCarLocation returns the car location. Error if car not found.
-func (*gameServer) GetCarLocation(ctx context.Context, request *GetCarLocationRequest) (*Location, error) {
+func (*gameServer) GetCarLocation(ctx context.Context, request *g.GetCarLocationRequest) (*g.Location, error) {
 	c, ok := data.cars[request.CarId]
 	if !ok {
-		return &Location{}, errors.New("Car not found")
+		return &g.Location{}, errors.New("Car not found")
 	}
 
-	l := Location{
-		RouteId: c.location.routeId,
-		Index:   int32(c.location.index),
-		Miles:   int32(c.location.miles),
+	l := g.Location{
+		RouteId: c.RouteId,
+		Index:   int32(c.RouteIndex),
+		Miles:   float32(c.NodeMiles),
 	}
 
 	return &l, nil
@@ -232,44 +268,75 @@ func (*gameServer) GetCarLocation(ctx context.Context, request *GetCarLocationRe
 
 // mainLoop updates the world every second
 func mainLoop(ch chan int) {
-	fmt.Println("Looping...")
+	const updateInterval = time.Second
+	const saveInterval = 10 * time.Second
+
+	u := time.NewTicker(updateInterval)
+	s := time.NewTicker(saveInterval)
 
 	for {
-		fmt.Println("Updating world...")
-		update()
-		time.Sleep(updateInterval)
+		select {
+		case <-u.C:
+			update()
+		case <-s.C:
+			s.Stop()
+			<-save()
+			s.Reset(saveInterval)
+		}
 	}
-	ch <- 0
 }
 
 // update makes all changes to world state
 // Currently that means moving cars around.
 func update() {
+	fmt.Printf("Updating...\n")
 	now := time.Now()
 	diff := now.Sub(lastTick)
 	for _, c := range data.cars {
-		if c.mph == 0 {
+		if c.Mph == 0 {
 			continue
 		}
 
-		route := routeMap[c.location.routeId]
-		node := route.Nodes[c.location.index]
-		c.location.miles += float32(float64(c.mph) * (diff.Seconds() / 3600.0))
-		excessMiles := c.location.miles - float32(node.Miles)
+		route := routeMap[c.RouteId]
+		node := route.Nodes[c.RouteIndex]
+		c.NodeMiles += c.Mph * (diff.Seconds() / 3600.0)
+		excessMiles := c.NodeMiles - node.Miles
 		for excessMiles > 0 {
 			// move to next node
-			c.location.index++
-			node = route.Nodes[c.location.index]
-      c.location.miles = excessMiles
-			if c.location.index == len(route.Nodes)-1 {
+			c.RouteIndex++
+			node = route.Nodes[c.RouteIndex]
+			c.NodeMiles = excessMiles
+			if c.RouteIndex == int32(len(route.Nodes)-1) {
 				// end of the line
-				c.mph = 0
+				c.Mph = 0
 				break
 			}
-			excessMiles = c.location.miles - float32(node.Miles)
+			excessMiles = c.NodeMiles - node.Miles
 		}
 
 		// debug
 		fmt.Printf("%+v\n", c)
 	}
+}
+
+// save persists in-memory data to the database for safe keeping
+func save() <-chan int32 {
+	fmt.Printf("Saving...\n")
+	c := make(chan int32)
+	go func() {
+		defer close(c)
+		ctx := context.Background()
+		for _, car := range data.cars {
+      exec, err := client.Car.FindUnique(db.Car.ID.Equals(car.Id)).Update(
+				db.Car.NodeMiles.Set(float64(car.NodeMiles)),
+				db.Car.RouteIndex.Set(int(car.RouteIndex)),
+			).Exec(ctx)
+      if err != nil {
+        return 
+      }
+      fmt.Printf("%v", exec)
+		}
+		c <- 1
+	}()
+	return c
 }
