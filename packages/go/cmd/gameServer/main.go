@@ -12,6 +12,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -36,30 +37,16 @@ type gameServer struct {
  *
  ******************************/
 
-// move this into a provider
-
-/*
-type location struct {
-	routeId string
-	index   int // index of node in route if they were all laid out sequentially
-	miles   float32
-}
-
-type car struct {
-	id       string
-	location location
-	mph      float32
-}
-*/
-
 type gameData struct {
 	cars map[string]Car
+	routes map[string]Route
 }
 
-var data = gameData{cars: make(map[string]Car)}
+var data gameData = gameData{cars: make(map[string]Car), routes: make(map[string]Route)}
+var dataMutex sync.RWMutex // guards data
+
 var lastTick time.Time
 var client *db.PrismaClient
-var routeMap map[string]Route = make(map[string]Route)
 
 /******************************
  *
@@ -75,7 +62,6 @@ func main() {
 	fmt.Printf("GameServer starting...\n")
 
 	// Prisma
-
 	setupPrisma()
 	defer func() {
 		if err := client.Prisma.Disconnect(); err != nil {
@@ -83,13 +69,12 @@ func main() {
 		}
 	}()
 
+	// load data from db
 	<-loadRoutes()
 	<-loadCars()
 
 	// Start server
-
 	c := make(chan int)
-
 	go mainLoop(c)
 	go StartServer(c)
 	<-c
@@ -105,6 +90,10 @@ func setupPrisma() {
 
 func loadRoutes() <-chan int32 {
 	fmt.Printf("Loading routes...\n")
+
+	dataMutex.Lock()
+	defer dataMutex.Unlock()
+
 	c := make(chan int32)
 	go func() {
 		defer close(c)
@@ -125,7 +114,7 @@ func loadRoutes() <-chan int32 {
 		routes := unmarshallRoutes(rs)
 
 		for _, route := range routes {
-			routeMap[route.Id] = route
+			data.routes[route.Id] = route
 		}
 
 		c <- 1
@@ -156,6 +145,10 @@ func unmarshallRoutes(rs []db.RouteModel) []Route {
 
 func loadCars() <-chan int32 {
 	fmt.Printf("Loading cars...\n")
+
+	dataMutex.Lock()
+	defer dataMutex.Unlock()
+
 	c := make(chan int32)
 	go func() {
 		defer close(c)
@@ -185,18 +178,18 @@ func unmarshallCars(cs []db.CarModel) []Car {
 		}
 		routeId, ok := c.RouteID()
 		if !ok {
-		  continue
-    }
-    mph, ok := c.Mph()
-    if !ok {
-      continue
-    }
+			continue
+		}
+		mph, ok := c.Mph()
+		if !ok {
+			continue
+		}
 		car := Car{
 			Id:         c.ID,
-			RouteId: routeId,
+			RouteId:    routeId,
 			RouteIndex: int32(routeIndex),
 			NodeMiles:  nodeMiles,
-			Mph: mph,
+			Mph:        mph,
 		}
 		res = append(res, car)
 	}
@@ -233,6 +226,9 @@ func StartServer(ch chan int) {
 
 // UpsertCar creates or updates a car. Car should already have been created in the db.
 func (*gameServer) UpsertCar(ctx context.Context, request *g.UpsertCarRequest) (*g.Empty, error) {
+	dataMutex.Lock()
+	defer dataMutex.Unlock()
+
 	data.cars[request.Car.Id] = Car{
 		Id:         request.Car.Id,
 		RouteId:    request.Car.Location.RouteId,
@@ -246,6 +242,9 @@ func (*gameServer) UpsertCar(ctx context.Context, request *g.UpsertCarRequest) (
 
 // GetCarLocation returns the car location. Error if car not found.
 func (*gameServer) GetCarLocation(ctx context.Context, request *g.GetCarLocationRequest) (*g.Location, error) {
+	dataMutex.RLock()
+	defer dataMutex.Unlock()
+
 	c, ok := data.cars[request.CarId]
 	if !ok {
 		return &g.Location{}, errors.New("Car not found")
@@ -289,52 +288,64 @@ func mainLoop(ch chan int) {
 // update makes all changes to world state
 // Currently that means moving cars around.
 func update() {
+	dataMutex.Lock()
+	defer dataMutex.Unlock()
+
 	fmt.Printf("Updating...\n")
 	now := time.Now()
 	diff := now.Sub(lastTick)
-	for _, c := range data.cars {
-		if c.Mph == 0 {
+	lastTick = time.Now()
+	for i, _ := range data.cars {
+		car := data.cars[i]
+		if car.Mph == 0 {
 			continue
 		}
 
-		route := routeMap[c.RouteId]
-		node := route.Nodes[c.RouteIndex]
-		c.NodeMiles += c.Mph * (diff.Seconds() / 3600.0)
-		excessMiles := c.NodeMiles - node.Miles
+		route := data.routes[car.RouteId]
+		node := route.Nodes[car.RouteIndex]
+		car.NodeMiles += car.Mph * (diff.Seconds() / 3600.0)
+		excessMiles := car.NodeMiles - node.Miles
 		for excessMiles > 0 {
 			// move to next node
-			c.RouteIndex++
-			node = route.Nodes[c.RouteIndex]
-			c.NodeMiles = excessMiles
-			if c.RouteIndex == int32(len(route.Nodes)-1) {
+			car.RouteIndex++
+			node = route.Nodes[car.RouteIndex]
+			car.NodeMiles = excessMiles
+			if car.RouteIndex == int32(len(route.Nodes)-1) {
 				// end of the line
-				c.Mph = 0
+				car.Mph = 0
 				break
 			}
-			excessMiles = c.NodeMiles - node.Miles
+			excessMiles = car.NodeMiles - node.Miles
 		}
 
+		data.cars[i] = car
+
 		// debug
-		fmt.Printf("%+v\n", c)
+		fmt.Printf("%+v\n", car)
 	}
 }
 
 // save persists in-memory data to the database for safe keeping
 func save() <-chan int32 {
+	dataMutex.Lock()
+	defer dataMutex.Unlock()
+
 	fmt.Printf("Saving...\n")
 	c := make(chan int32)
 	go func() {
 		defer close(c)
 		ctx := context.Background()
 		for _, car := range data.cars {
-      exec, err := client.Car.FindUnique(db.Car.ID.Equals(car.Id)).Update(
+			exec, err := client.Car.FindUnique(
+				db.Car.ID.Equals(car.Id),
+			).Update(
 				db.Car.NodeMiles.Set(float64(car.NodeMiles)),
 				db.Car.RouteIndex.Set(int(car.RouteIndex)),
 			).Exec(ctx)
-      if err != nil {
-        return 
-      }
-      fmt.Printf("%v", exec)
+			if err != nil {
+				return
+			}
+			fmt.Printf("%+v", exec)
 		}
 		c <- 1
 	}()
