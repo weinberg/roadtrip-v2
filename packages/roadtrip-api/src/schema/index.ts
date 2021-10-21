@@ -15,6 +15,14 @@ const typeDefs = gql`
     car: Car!
   }
 
+  type Location {
+    routeId: String!
+    "Index into the route nodes if all route->ways->nodes were in an array."
+    index: Int!
+    "Miles into the current node"
+    miles: Float!
+  }
+
   type Car {
     id: String!
     "Car name"
@@ -28,6 +36,8 @@ const typeDefs = gql`
     mph: Int!
     "Current route"
     route: Route
+    "Current Location"
+    location: Location
   }
 
   type State {
@@ -69,7 +79,7 @@ const typeDefs = gql`
     "Features at this node"
     features: [Feature!]!
     "Length in miles of this node"
-    miles: Int!
+    miles: Float!
   }
 
   # A way is like a route segment - so like a highway
@@ -80,7 +90,7 @@ const typeDefs = gql`
     "Name of the way - typically the name of the highway this way represents"
     name: String!
     "Length of this way. This is equal to the sum of the miles of all the nodes in the way."
-    miles: Int!
+    miles: Float!
   }
 
   # A route is an ordered collection of ways.
@@ -90,7 +100,7 @@ const typeDefs = gql`
     name: String!
     ways: [Way!]!
     "Length of this route. This is equivalent to the sum of the miles of all the ways in the route."
-    miles: Int!
+    miles: Float!
     "The map this route is on."
     map: Map!
   }

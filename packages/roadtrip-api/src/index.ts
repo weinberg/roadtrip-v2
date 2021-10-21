@@ -14,6 +14,9 @@ import mapResolver from './resolvers/map';
 import featureResolver from './resolvers/feature';
 import { FeatureTypeEnum } from './resolvers/feature';
 
+const grpc = require('@grpc/grpc-js');
+const protoLoader = require('@grpc/proto-loader');
+
 async function main() {
   try {
     /**
@@ -25,6 +28,9 @@ async function main() {
     const dbPass = process.env.DATABASE_PASS;
     const dbName = process.env.DATABASE_NAME;
     const dbURL = `postgresql://${dbUser}:${dbPass}@${dbHost}:${dbPort}/${dbName}?schema=public`;
+    const gameServerHost = process.env.GAMESERVER_HOST;
+    const gameServerPort = process.env.GAMESERVER_PORT;
+    const gameServerConn = `${gameServerHost}:${gameServerPort}`;
 
     /**
      * Prisma
@@ -42,9 +48,24 @@ async function main() {
     // db.$on('query', logSql);
 
     /**
-     * Apollo
+     * gRPC
      */
 
+    const packageDefinition = protoLoader.loadSync(`${__dirname}/../../go/internal/gameServer/grpc/game.proto`, {
+      keepCase: true,
+      longs: String,
+      enums: String,
+      defaults: true,
+      oneofs: true,
+    });
+    const gameServer = grpc.loadPackageDefinition(packageDefinition).roadtrip;
+    // @ts-ignore
+    // eslint-disable-next-line no-unused-vars
+    const rtgrpc = new gameServer.RoadTripGame(gameServerConn, grpc.credentials.createInsecure());
+
+    /**
+     * Apollo
+     */
     const resolvers = {
       Query: {
         currentCharacter: characterResolver.currentCharacter,
@@ -56,6 +77,7 @@ async function main() {
       Car: {
         owner: carResolver.owner,
         route: carResolver.route,
+        location: carResolver.location,
       },
       Map: {
         routes: mapResolver.routes,
@@ -112,6 +134,7 @@ async function main() {
         } catch (e) {
           return {};
         }
+        context.rtgrpc = rtgrpc;
         return context;
       },
     });

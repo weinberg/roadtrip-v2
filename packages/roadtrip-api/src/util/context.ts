@@ -1,10 +1,12 @@
 import { Character } from '../resolvers/character';
 import { PrismaClient } from '@prisma/client';
 import { logError, logInfo } from './logging';
+import { ServiceClient } from '@grpc/grpc-js/src/make-client';
 
 interface Context {
   currentCharacter: Character;
   db: PrismaClient;
+  rtgrpc?: ServiceClient;
 }
 
 const getContext = async (db: PrismaClient, token: string): Promise<Context> => {
@@ -16,6 +18,7 @@ const getContext = async (db: PrismaClient, token: string): Promise<Context> => 
     logError(e.toString());
   }
   logInfo(`currentCharacter: ` + JSON.stringify(currentCharacter));
+
   return {
     currentCharacter,
     db,

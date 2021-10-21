@@ -243,7 +243,7 @@ func (*gameServer) UpsertCar(ctx context.Context, request *g.UpsertCarRequest) (
 // GetCarLocation returns the car location. Error if car not found.
 func (*gameServer) GetCarLocation(ctx context.Context, request *g.GetCarLocationRequest) (*g.Location, error) {
 	dataMutex.RLock()
-	defer dataMutex.Unlock()
+	defer dataMutex.RUnlock()
 
 	c, ok := data.cars[request.CarId]
 	if !ok {

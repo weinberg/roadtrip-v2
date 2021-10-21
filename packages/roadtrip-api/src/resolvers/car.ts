@@ -1,6 +1,6 @@
 import { Context } from '../util/context';
 import { Character } from './character';
-import { throwError } from '../util/logging';
+import { logInfo, throwError } from '../util/logging';
 import { Route } from './route';
 
 /*
@@ -88,4 +88,18 @@ const route = async (parent: Car, args, { db }: Context) => {
   return results[0];
 };
 
-export default { owner, route };
+const location = async (parent: Car, args, { rtgrpc }: Context) => {
+  const location = await new Promise((resolve, reject) => {
+    rtgrpc.getCarLocation({ car_id: parent.id }, (error, location) => {
+      if (error) {
+        reject(error);
+      }
+      resolve(location);
+    });
+  });
+  logInfo(`location: ${JSON.stringify(location, null, 2)}`);
+  // @ts-ignore
+  return { routeId: location.route_id, index: location.index, miles: location.miles };
+};
+
+export default { owner, route, location };
