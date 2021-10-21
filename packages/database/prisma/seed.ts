@@ -153,7 +153,7 @@ async function main() {
                           },
                           i === 0 && j === 0
                             ? {
-                                glyph: "*",
+                                glyph: "○",
                                 data: {
                                   type: "TOWN",
                                   name: "Seattle",

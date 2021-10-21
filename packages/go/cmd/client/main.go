@@ -13,6 +13,7 @@ import (
   "net/http"
   "os"
   "strconv"
+  "time"
 )
 
 var token string
@@ -70,6 +71,29 @@ func getCurrentCharacter() {
 }
 
 /**
+ * Load location
+ */
+func getLocation() {
+
+  var query struct {
+    CurrentCharacter struct {
+      Car struct {
+        Location types.Location
+      }
+    }
+  }
+
+  err := client.Query(context.Background(), &query, nil)
+  if err != nil {
+    fmt.Printf("%v\n", err)
+    // Handle error.
+    return
+  }
+
+  currentCharacter.Car.Location = query.CurrentCharacter.Car.Location
+}
+
+/**
  * setup
  */
 func setup() {
@@ -122,5 +146,10 @@ func main() {
   setup()
 
   screen = ui.Screen{Width: 80, Height: 25}
-  ui.Render(ui.RenderData{CurrentCharacter: currentCharacter})
+
+  for {
+    time.Sleep(time.Second)
+    getLocation()
+    ui.Render(ui.RenderData{CurrentCharacter: currentCharacter})
+  }
 }

@@ -48,6 +48,14 @@ type (
   Car struct {
     Name  graphql.String
     Route Route
+    Location Location
+    MPH graphql.Float
+  }
+
+  Location struct {
+    RouteId graphql.String
+    Index int
+    Miles graphql.Float
   }
 
   CurrentCharacter struct {
