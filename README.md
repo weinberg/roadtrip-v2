@@ -1,8 +1,18 @@
-# RoadTrip V2
+```text
+    __ __              ______     
+   '  )  )           /   /        
+     /--' __ __.  __/ --/__  o _  
+    /  \_(_)(_/|_(_/_(_// (_<_/_)_
+                             /    
+                          __/     
+```
+# Roadtrip
 
 Take a RoadTrip cross country with your friends... in your terminal!
 
-RoadTrip is a low intensity casual background game requiring very little interaction and can be played at your own pace while working or doing other activities.
+![System components](design/screenshot.png?raw=true "System Components")
+
+RoadTrip is a low intensity casual multiplayer background game requiring little interaction and can be played at your own pace while working or doing other activities.
 
 ## Current State
 
