@@ -10,7 +10,8 @@
 
 Take a RoadTrip cross country with your friends... in your terminal!
 
-![System components](design/screenshot.png?raw=true "System Components")
+![Screenshot](design/screenshot.png?raw=true "Screenshot")
+<img src="design/screenshot.png" width="100" height="100">
 
 RoadTrip is a low intensity casual multiplayer background game requiring little interaction and can be played at your own pace while working or doing other activities.
 
