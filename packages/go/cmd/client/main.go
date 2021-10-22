@@ -79,6 +79,7 @@ func getLocation() {
     CurrentCharacter struct {
       Car struct {
         Location types.Location
+        MPH graphql.Float
       }
     }
   }
@@ -91,6 +92,7 @@ func getLocation() {
   }
 
   currentCharacter.Car.Location = query.CurrentCharacter.Car.Location
+  currentCharacter.Car.MPH = query.CurrentCharacter.Car.MPH
 }
 
 /**
