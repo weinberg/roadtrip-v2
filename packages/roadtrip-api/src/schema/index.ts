@@ -33,7 +33,11 @@ const typeDefs = gql`
     "The owner of the Car"
     owner: Character!
     "Velocity in MPH"
-    mph: Int!
+    mph: Float!
+    "Odometer in miles"
+    odometer: Float!
+    "Tripometer in miles"
+    tripometer: Float!
     "Current route"
     route: Route
     "Current Location"
@@ -125,6 +129,7 @@ const typeDefs = gql`
   #
   type Query {
     currentCharacter: Character
+    car(id: ID!): Car
     character(id: ID!): Character
     maps: [Map!]!
     map(id: ID): Map

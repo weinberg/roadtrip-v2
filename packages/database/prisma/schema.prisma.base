@@ -8,6 +8,8 @@ model car {
   owner         character? @relation(fields: [owner_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   owner_id      String?    @db.Uuid
   mph           Float?     @default(0)
+  odometer      Float?     @default(0)
+  tripometer    Float?     @default(0)
   route         route?     @relation(fields: [route_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   route_id      String?    @db.Uuid
   node_miles    Float?     @default(0)

@@ -17,5 +17,7 @@ type (
     RouteIndex int32
     NodeMiles float64
     Mph float64
+    Odometer float64
+    Tripometer float64
   }
 )

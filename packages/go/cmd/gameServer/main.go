@@ -38,7 +38,7 @@ type gameServer struct {
  ******************************/
 
 type gameData struct {
-	cars map[string]Car
+	cars   map[string]Car
 	routes map[string]Route
 }
 
@@ -235,25 +235,31 @@ func (*gameServer) UpsertCar(ctx context.Context, request *g.UpsertCarRequest) (
 		RouteIndex: request.Car.Location.Index,
 		NodeMiles:  float64(request.Car.Location.Miles),
 		Mph:        float64(request.Car.Mph),
+		Odometer:   float64(request.Car.Odometer),
+		Tripometer: float64(request.Car.Tripometer),
 	}
 
 	return &g.Empty{}, nil
 }
 
-// GetCarLocation returns the car location. Error if car not found.
-func (*gameServer) GetCarLocation(ctx context.Context, request *g.GetCarLocationRequest) (*g.Location, error) {
+// GetCar returns the car. Error if car not found.
+func (*gameServer) GetCar(ctx context.Context, request *g.GetCarRequest) (*g.Car, error) {
 	dataMutex.RLock()
 	defer dataMutex.RUnlock()
 
 	c, ok := data.cars[request.CarId]
 	if !ok {
-		return &g.Location{}, errors.New("Car not found")
+		return &g.Car{}, errors.New("Car not found")
 	}
 
-	l := g.Location{
-		RouteId: c.RouteId,
-		Index:   int32(c.RouteIndex),
-		Miles:   float32(c.NodeMiles),
+	l := g.Car{
+		Odometer: float32(c.Odometer),
+		Tripometer: float32(c.Tripometer),
+		Location: &g.Location{
+			RouteId: c.RouteId,
+			Index:   int32(c.RouteIndex),
+			Miles:   float32(c.NodeMiles),
+		},
 	}
 
 	return &l, nil
@@ -303,8 +309,11 @@ func update() {
 
 		route := data.routes[car.RouteId]
 		node := route.Nodes[car.RouteIndex]
-		car.NodeMiles += car.Mph * (diff.Seconds() / 3600.0)
+		dist := car.Mph * (diff.Seconds() / 3600.0)
+		car.NodeMiles += dist
 		excessMiles := car.NodeMiles - node.Miles
+		car.Odometer += dist
+		car.Tripometer += dist
 		for excessMiles > 0 {
 			// move to next node
 			car.RouteIndex++
@@ -313,6 +322,8 @@ func update() {
 			if car.RouteIndex == int32(len(route.Nodes)-1) {
 				// end of the line
 				car.Mph = 0
+				car.Odometer -= excessMiles
+				car.Tripometer -= excessMiles
 				break
 			}
 			excessMiles = car.NodeMiles - node.Miles
@@ -340,6 +351,8 @@ func save() <-chan int32 {
 				db.Car.ID.Equals(car.Id),
 			).Update(
 				db.Car.NodeMiles.Set(float64(car.NodeMiles)),
+				db.Car.Odometer.Set(float64(car.Odometer)),
+				db.Car.Tripometer.Set(float64(car.Tripometer)),
 				db.Car.RouteIndex.Set(int(car.RouteIndex)),
 			).Exec(ctx)
 			if err != nil {

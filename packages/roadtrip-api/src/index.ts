@@ -69,6 +69,7 @@ async function main() {
     const resolvers = {
       Query: {
         currentCharacter: characterResolver.currentCharacter,
+        car: carResolver.car,
         maps: mapResolver.maps,
       },
       Character: {
@@ -77,7 +78,6 @@ async function main() {
       Car: {
         owner: carResolver.owner,
         route: carResolver.route,
-        location: carResolver.location,
       },
       Map: {
         routes: mapResolver.routes,

@@ -19,7 +19,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RoadTripGameClient interface {
 	Upsert(ctx context.Context, in *UpsertCarRequest, opts ...grpc.CallOption) (*Empty, error)
-	GetCarLocation(ctx context.Context, in *GetCarLocationRequest, opts ...grpc.CallOption) (*Location, error)
+	GetCar(ctx context.Context, in *GetCarRequest, opts ...grpc.CallOption) (*Car, error)
 }
 
 type roadTripGameClient struct {
@@ -39,9 +39,9 @@ func (c *roadTripGameClient) Upsert(ctx context.Context, in *UpsertCarRequest, o
 	return out, nil
 }
 
-func (c *roadTripGameClient) GetCarLocation(ctx context.Context, in *GetCarLocationRequest, opts ...grpc.CallOption) (*Location, error) {
-	out := new(Location)
-	err := c.cc.Invoke(ctx, "/roadtrip.RoadTripGame/GetCarLocation", in, out, opts...)
+func (c *roadTripGameClient) GetCar(ctx context.Context, in *GetCarRequest, opts ...grpc.CallOption) (*Car, error) {
+	out := new(Car)
+	err := c.cc.Invoke(ctx, "/roadtrip.RoadTripGame/GetCar", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (c *roadTripGameClient) GetCarLocation(ctx context.Context, in *GetCarLocat
 // for forward compatibility
 type RoadTripGameServer interface {
 	Upsert(context.Context, *UpsertCarRequest) (*Empty, error)
-	GetCarLocation(context.Context, *GetCarLocationRequest) (*Location, error)
+	GetCar(context.Context, *GetCarRequest) (*Car, error)
 	mustEmbedUnimplementedRoadTripGameServer()
 }
 
@@ -64,8 +64,8 @@ type UnimplementedRoadTripGameServer struct {
 func (UnimplementedRoadTripGameServer) Upsert(context.Context, *UpsertCarRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Upsert not implemented")
 }
-func (UnimplementedRoadTripGameServer) GetCarLocation(context.Context, *GetCarLocationRequest) (*Location, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetCarLocation not implemented")
+func (UnimplementedRoadTripGameServer) GetCar(context.Context, *GetCarRequest) (*Car, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCar not implemented")
 }
 func (UnimplementedRoadTripGameServer) mustEmbedUnimplementedRoadTripGameServer() {}
 
@@ -98,20 +98,20 @@ func _RoadTripGame_Upsert_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RoadTripGame_GetCarLocation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetCarLocationRequest)
+func _RoadTripGame_GetCar_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCarRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RoadTripGameServer).GetCarLocation(ctx, in)
+		return srv.(RoadTripGameServer).GetCar(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/roadtrip.RoadTripGame/GetCarLocation",
+		FullMethod: "/roadtrip.RoadTripGame/GetCar",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RoadTripGameServer).GetCarLocation(ctx, req.(*GetCarLocationRequest))
+		return srv.(RoadTripGameServer).GetCar(ctx, req.(*GetCarRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -128,8 +128,8 @@ var RoadTripGame_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _RoadTripGame_Upsert_Handler,
 		},
 		{
-			MethodName: "GetCarLocation",
-			Handler:    _RoadTripGame_GetCarLocation_Handler,
+			MethodName: "GetCar",
+			Handler:    _RoadTripGame_GetCar_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
