@@ -184,12 +184,22 @@ func unmarshallCars(cs []db.CarModel) []Car {
 		if !ok {
 			continue
 		}
+		odometer, ok := c.Odometer()
+		if !ok {
+			continue
+		}
+		tripometer, ok := c.Tripometer()
+		if !ok {
+			continue
+		}
 		car := Car{
 			Id:         c.ID,
 			RouteId:    routeId,
 			RouteIndex: int32(routeIndex),
 			NodeMiles:  nodeMiles,
 			Mph:        mph,
+			Odometer:   odometer,
+			Tripometer: tripometer,
 		}
 		res = append(res, car)
 	}
@@ -242,24 +252,22 @@ func (*gameServer) UpsertCar(ctx context.Context, request *g.UpsertCarRequest) (
 	return &g.Empty{}, nil
 }
 
-// GetCar returns the car. Error if car not found.
-func (*gameServer) GetCar(ctx context.Context, request *g.GetCarRequest) (*g.Car, error) {
+// GetUpdate returns an update for the car referenced by id. Error if car not found.
+func (*gameServer) GetUpdate(ctx context.Context, request *g.GetUpdateRequest) (*g.Update, error) {
 	dataMutex.RLock()
 	defer dataMutex.RUnlock()
 
 	c, ok := data.cars[request.CarId]
 	if !ok {
-		return &g.Car{}, errors.New("Car not found")
+		return &g.Update{}, errors.New("Car not found")
 	}
 
-	l := g.Car{
-		Odometer: float32(c.Odometer),
+	l := g.Update{
+		Odometer:   float32(c.Odometer),
 		Tripometer: float32(c.Tripometer),
-		Location: &g.Location{
-			RouteId: c.RouteId,
-			Index:   int32(c.RouteIndex),
-			Miles:   float32(c.NodeMiles),
-		},
+		Mph:        float32(c.Mph),
+		Index:      c.RouteIndex,
+		Miles:      float32(c.NodeMiles),
 	}
 
 	return &l, nil
@@ -282,7 +290,9 @@ func mainLoop(ch chan int) {
 	for {
 		select {
 		case <-u.C:
+			u.Stop()
 			update()
+			u.Reset(updateInterval)
 		case <-s.C:
 			s.Stop()
 			<-save()

@@ -6,7 +6,7 @@ const typeDefs = gql`
   #
 
   type Character {
-    id: String!
+    id: ID!
     "Character's token"
     token: String!
     "Character's name"
@@ -16,7 +16,7 @@ const typeDefs = gql`
   }
 
   type Location {
-    routeId: String!
+    routeId: ID!
     "Index into the route nodes if all route->ways->nodes were in an array."
     index: Int!
     "Miles into the current node"
@@ -24,7 +24,7 @@ const typeDefs = gql`
   }
 
   type Car {
-    id: String!
+    id: ID!
     "Car name"
     name: String
     plate: String!
@@ -45,7 +45,7 @@ const typeDefs = gql`
   }
 
   type State {
-    id: String!
+    id: ID!
     "The name of the State"
     name: String!
     "The abbreviation for the state"
@@ -53,7 +53,7 @@ const typeDefs = gql`
   }
 
   type Town {
-    id: String!
+    id: ID!
     "Name of town"
     name: String
     "UTF8 character glyph to represent this node"
@@ -61,7 +61,7 @@ const typeDefs = gql`
   }
 
   type Road {
-    id: String!
+    id: ID!
     "Name of road"
     name: String
     "UTF8 character glyph to represent this node"
@@ -88,7 +88,7 @@ const typeDefs = gql`
 
   # A way is like a route segment - so like a highway
   type Way {
-    id: String!
+    id: ID!
     "Nodes in this way"
     nodes: [Node!]!
     "Name of the way - typically the name of the highway this way represents"
@@ -100,7 +100,7 @@ const typeDefs = gql`
   # A route is an ordered collection of ways.
   # The name is a description of the route like "Seattle to Denver".
   type Route {
-    id: String!
+    id: ID!
     name: String!
     ways: [Way!]!
     "Length of this route. This is equivalent to the sum of the miles of all the ways in the route."
@@ -110,7 +110,7 @@ const typeDefs = gql`
   }
 
   type Map {
-    id: String!
+    id: ID!
     """
     String of all the glyphs representing a background image of the map.
     The string is w*h in length with no carriage returns or separators between rows.
@@ -124,6 +124,16 @@ const typeDefs = gql`
     routes: [Route!]!
   }
 
+  type Update {
+    mph: Float!
+    odometer: Float!
+    tripometer: Float!
+    "Index into the route's nodes"
+    index: Int!
+    "Miles into the current node"
+    miles: Float!
+  }
+
   #
   # Query
   #
@@ -132,9 +142,11 @@ const typeDefs = gql`
     car(id: ID!): Car
     character(id: ID!): Character
     maps: [Map!]!
-    map(id: ID): Map
+    map(id: ID!): Map
     routes: [Route!]!
     route(id: ID!): Route
+    "Get update of character's current car. This is optimized to be called frequently."
+    update(id: ID!): Update
   }
 
   #

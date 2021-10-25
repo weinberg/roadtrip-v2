@@ -32,6 +32,8 @@ const car = async (root, args, { rtgrpc }: Context) => {
     tripometer: car.tripometer,
     // @ts-ignore
     location: { routeId: car.location.route_id, index: car.location.index, miles: car.location.miles },
+    // @ts-ignore
+    mph: car.mph,
   };
 };
 

@@ -7,6 +7,7 @@ import { Context, getContext } from './util/context';
 import { typeDefs } from './schema';
 import characterResolver from './resolvers/character';
 import carResolver from './resolvers/car';
+import updateResolver from './resolvers/update';
 import routeResolver from './resolvers/route';
 import nodeResolver from './resolvers/node';
 import wayResolver from './resolvers/way';
@@ -68,6 +69,7 @@ async function main() {
      */
     const resolvers = {
       Query: {
+        update: updateResolver.update,
         currentCharacter: characterResolver.currentCharacter,
         car: carResolver.car,
         maps: mapResolver.maps,

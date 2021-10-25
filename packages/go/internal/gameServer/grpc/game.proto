@@ -24,6 +24,14 @@ message Location {
   float miles = 3;
 }
 
+message Update {
+  float mph = 1;
+  float odometer = 2;
+  float tripometer = 3;
+  int32 index = 4;
+  float miles = 5;
+}
+
 /*************************************
  * Service
  ************************************/
@@ -32,7 +40,7 @@ message Location {
 
 service RoadTripGame {
   rpc Upsert(UpsertCarRequest) returns (Empty) {}
-  rpc GetCar(GetCarRequest) returns (Car) {}
+  rpc GetUpdate(GetUpdateRequest) returns (Update) {}
 }
 
 /*************************************
@@ -45,7 +53,7 @@ message UpsertCarRequest {
   Car car = 1;
 }
 
-message GetCarRequest {
+message GetUpdateRequest {
   string car_id = 1;
 }
 

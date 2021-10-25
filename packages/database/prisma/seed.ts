@@ -160,6 +160,15 @@ async function main() {
                                 } as Prisma.JsonObject,
                               }
                             : undefined,
+                          i === 4 && j === 2
+                            ? {
+                                glyph: "○",
+                                data: {
+                                  type: "TOWN",
+                                  name: "Denver",
+                                } as Prisma.JsonObject,
+                              }
+                            : undefined,
                         ],
                       },
                     },
